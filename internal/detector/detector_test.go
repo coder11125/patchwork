@@ -8,9 +8,9 @@ import (
 )
 
 type mockDetector struct {
-	ecosystem  domain.Ecosystem
-	detectFn   func(ctx context.Context, dir string) (*domain.DetectResult, error)
-	canHandle  func(filePath string) bool
+	ecosystem domain.Ecosystem
+	detectFn  func(ctx context.Context, dir string) (*domain.DetectResult, error)
+	canHandle func(filePath string) bool
 }
 
 func (m *mockDetector) Ecosystem() domain.Ecosystem {

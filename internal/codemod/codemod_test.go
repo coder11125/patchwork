@@ -14,8 +14,8 @@ type mockCodemod struct {
 	ecosystem domain.Ecosystem
 }
 
-func (m *mockCodemod) Name() string                              { return m.name }
-func (m *mockCodemod) Ecosystem() domain.Ecosystem                { return m.ecosystem }
+func (m *mockCodemod) Name() string                { return m.name }
+func (m *mockCodemod) Ecosystem() domain.Ecosystem { return m.ecosystem }
 func (m *mockCodemod) Apply(ctx context.Context, workDir string, recipe *domain.Recipe) error {
 	return nil
 }
@@ -81,8 +81,8 @@ type customApplyCodemod struct {
 	applyFn   func(ctx context.Context, workDir string, recipe *domain.Recipe) error
 }
 
-func (c *customApplyCodemod) Name() string                              { return c.name }
-func (c *customApplyCodemod) Ecosystem() domain.Ecosystem                { return c.ecosystem }
+func (c *customApplyCodemod) Name() string                { return c.name }
+func (c *customApplyCodemod) Ecosystem() domain.Ecosystem { return c.ecosystem }
 func (c *customApplyCodemod) Apply(ctx context.Context, workDir string, recipe *domain.Recipe) error {
 	return c.applyFn(ctx, workDir, recipe)
 }

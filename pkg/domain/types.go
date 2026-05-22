@@ -9,6 +9,7 @@ const (
 	EcosystemNPM   Ecosystem = "npm"
 	EcosystemPip   Ecosystem = "pip"
 	EcosystemCargo Ecosystem = "cargo"
+	EcosystemRuby  Ecosystem = "ruby"
 )
 
 func (e Ecosystem) String() string {

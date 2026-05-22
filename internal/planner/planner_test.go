@@ -15,12 +15,20 @@ func (m *mockRecipeStore) FindMatching(ctx context.Context, ecosystem domain.Eco
 	return m.findMatchingFn(ctx, ecosystem, packageName, fromVersion, toVersion)
 }
 
-func (m *mockRecipeStore) Save(ctx context.Context, recipe *domain.Recipe) error              { return nil }
-func (m *mockRecipeStore) Load(ctx context.Context, id string) (*domain.Recipe, error)         { return nil, nil }
-func (m *mockRecipeStore) List(ctx context.Context) ([]*domain.Recipe, error)                   { return nil, nil }
-func (m *mockRecipeStore) RecordEpisode(ctx context.Context, episode *domain.Episode) error    { return nil }
-func (m *mockRecipeStore) ListEpisodes(ctx context.Context) ([]*domain.Episode, error)          { return nil, nil }
-func (m *mockRecipeStore) UpdateRecipeStats(ctx context.Context, recipeID string, success bool) error { return nil }
+func (m *mockRecipeStore) Save(ctx context.Context, recipe *domain.Recipe) error { return nil }
+func (m *mockRecipeStore) Load(ctx context.Context, id string) (*domain.Recipe, error) {
+	return nil, nil
+}
+func (m *mockRecipeStore) List(ctx context.Context) ([]*domain.Recipe, error) { return nil, nil }
+func (m *mockRecipeStore) RecordEpisode(ctx context.Context, episode *domain.Episode) error {
+	return nil
+}
+func (m *mockRecipeStore) ListEpisodes(ctx context.Context) ([]*domain.Episode, error) {
+	return nil, nil
+}
+func (m *mockRecipeStore) UpdateRecipeStats(ctx context.Context, recipeID string, success bool) error {
+	return nil
+}
 
 func TestPlannerPlan(t *testing.T) {
 	store := &mockRecipeStore{
@@ -135,9 +143,9 @@ func TestPlannerPlanTotalRisk(t *testing.T) {
 	p := New(store)
 
 	tests := []struct {
-		name      string
-		risks     []domain.RiskLevel
-		wantRisk  domain.RiskLevel
+		name     string
+		risks    []domain.RiskLevel
+		wantRisk domain.RiskLevel
 	}{
 		{"all low", []domain.RiskLevel{domain.RiskLow, domain.RiskLow}, domain.RiskLow},
 		{"low and medium", []domain.RiskLevel{domain.RiskLow, domain.RiskMedium}, domain.RiskMedium},
@@ -150,10 +158,10 @@ func TestPlannerPlanTotalRisk(t *testing.T) {
 			var upgrades []domain.Upgrade
 			for _, risk := range tc.risks {
 				upgrades = append(upgrades, domain.Upgrade{
-					Name:       "pkg",
-					Current:    "1.0.0",
-					Target:     "2.0.0",
-					RiskLevel:  risk,
+					Name:      "pkg",
+					Current:   "1.0.0",
+					Target:    "2.0.0",
+					RiskLevel: risk,
 					Ecosystem: domain.EcosystemGo,
 				})
 			}

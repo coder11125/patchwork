@@ -14,15 +14,17 @@ type mockStore struct {
 func (m *mockStore) FindMatching(ctx context.Context, ecosystem domain.Ecosystem, packageName, fromVersion, toVersion string) ([]*domain.Recipe, error) {
 	return nil, nil
 }
-func (m *mockStore) Save(ctx context.Context, recipe *domain.Recipe) error               { return nil }
-func (m *mockStore) Load(ctx context.Context, id string) (*domain.Recipe, error)          { return nil, nil }
-func (m *mockStore) List(ctx context.Context) ([]*domain.Recipe, error)                    { return nil, nil }
+func (m *mockStore) Save(ctx context.Context, recipe *domain.Recipe) error       { return nil }
+func (m *mockStore) Load(ctx context.Context, id string) (*domain.Recipe, error) { return nil, nil }
+func (m *mockStore) List(ctx context.Context) ([]*domain.Recipe, error)          { return nil, nil }
 func (m *mockStore) RecordEpisode(ctx context.Context, episode *domain.Episode) error {
 	m.recorded = append(m.recorded, episode)
 	return nil
 }
-func (m *mockStore) ListEpisodes(ctx context.Context) ([]*domain.Episode, error)           { return nil, nil }
-func (m *mockStore) UpdateRecipeStats(ctx context.Context, recipeID string, success bool) error { return nil }
+func (m *mockStore) ListEpisodes(ctx context.Context) ([]*domain.Episode, error) { return nil, nil }
+func (m *mockStore) UpdateRecipeStats(ctx context.Context, recipeID string, success bool) error {
+	return nil
+}
 
 func TestStartEpisode(t *testing.T) {
 	ep := StartEpisode("testpkg", "1.0.0", "2.0.0", domain.EcosystemGo)

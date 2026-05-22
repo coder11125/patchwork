@@ -6,10 +6,10 @@ Patchwork detects outdated packages, analyzes changelogs for breaking changes, p
 
 ## Features
 
-- **Multi-ecosystem detection** — Go modules, npm, pip (requirements.txt), Cargo (Cargo.toml)
+- **Multi-ecosystem detection** — Go modules, npm, pip (requirements.txt), Cargo (Cargo.toml), Ruby (Gemfile)
 - **Breaking change analysis** — GitHub releases, changelog parsing, semver risk assessment, LLM-powered analysis
 - **Recipe-driven learning** — Successful upgrades are saved as reusable recipes; future upgrades match against historical knowledge
-- **Safe codemod application** — Regex-based transformations, manifest updates (go.mod, package.json, requirements.txt, Cargo.toml)
+- **Safe codemod application** — Regex-based transformations, manifest updates (go.mod, package.json, requirements.txt, Cargo.toml, Gemfile)
 - **Isolated test execution** — Tests run in temp directories before changes touch your working tree
 - **PR automation** — Creates GitHub/GitLab pull requests for each upgrade
 - **Full pipeline** — `patchwork run` chains detect → analyze → plan → apply → pr
@@ -36,14 +36,15 @@ Patchwork detects outdated packages, analyzes changelogs for breaking changes, p
 │Registry│ │Registry│ │       │ │Registry│ │Registry  │
 └────┬───┘ └───┬────┘ └──┬────┘ └─┬─────┘ └┬────────┘
      │          │         │        │        │
-  ┌──▼────┐  ┌──▼──┐   ┌──▼──┐  ┌─▼──────┐ ┌─▼────────┐
-  │go.mod  │  │GitHub│  │Recipe│  │regex   │ │go test   │
-  │pkg.json│  │release│  │Store │  │go.mod  │ │npm test  │
-  │req.txt │  │semver │  │      │  │pkg.json│ │cargo test│
-  │Cargo   │  │LLM   │  │      │  │req.txt │ │          │
-  │.toml   │  │      │  │      │  │Cargo   │ │          │
-  └────────┘  └──────┘  └──────┘  │.toml   │ └──────────┘
-                                  └────────┘           │
+   ┌──▼────┐  ┌──▼──┐   ┌──▼──┐  ┌─▼──────┐ ┌─▼────────┐
+   │go.mod  │  │GitHub│  │Recipe│  │regex   │ │go test   │
+   │pkg.json│  │release│  │Store │  │go.mod  │ │npm test  │
+   │req.txt │  │semver │  │      │  │pkg.json│ │cargo test│
+   │Cargo   │  │LLM   │  │      │  │req.txt │ │bundle    │
+   │.toml   │  │      │  │      │  │Cargo   │ │exec      │
+   │Gemfile │  │      │  │      │  │.toml   │ │rspec     │
+   └────────┘  └──────┘  └──────┘  │Gemfile │ └──────────┘
+                                   └────────┘           │
                                                   ┌─────▼─────┐
                                                   │   PRCreator │
                                                   │  GitHub API │
@@ -58,11 +59,11 @@ Patchwork detects outdated packages, analyzes changelogs for breaking changes, p
 | `cmd/patchwork` | Single entry point, wires CLI |
 | `internal/cli` | Cobra commands: configure, detect, analyze, plan, apply, pr, run, serve |
 | `internal/config` | Koanf-based config loading (defaults → YAML → keychain → env → flags) |
-| `internal/detector` | Package detectors for Go, npm, pip, Cargo ecosystems |
+| `internal/detector` | Package detectors for Go, npm, pip, Cargo, Ruby ecosystems |
 | `internal/analyzer` | Changelog fetching, semver risk, LLM-powered breaking change analysis |
 | `internal/planner` | Upgrade plan generation with recipe matching and risk ordering |
-| `internal/codemod` | Code transformation engine (regex, go.mod, package.json, requirements.txt, Cargo.toml) |
-| `internal/testrunner` | Isolated test execution for Go, npm, and Cargo |
+| `internal/codemod` | Code transformation engine (regex, go.mod, package.json, requirements.txt, Cargo.toml, Gemfile) |
+| `internal/testrunner` | Isolated test execution for Go, npm, Cargo, and Ruby (Bundler) |
 | `internal/pr` | PR creation via GitHub/GitLab REST APIs |
 | `internal/recipe` | Disk-based recipe store and episode recording |
 | `internal/pipeline` | Full workflow orchestration |

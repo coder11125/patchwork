@@ -8,18 +8,18 @@ import (
 
 func TestAssessRisk(t *testing.T) {
 	tests := []struct {
-		name           string
-		current        string
-		latest         string
-		breaking       []domain.BreakingChange
-		want           domain.RiskLevel
+		name     string
+		current  string
+		latest   string
+		breaking []domain.BreakingChange
+		want     domain.RiskLevel
 	}{
 		{
-			name:    "major bump with breaking changes",
-			current: "1.0.0",
-			latest:  "2.0.0",
+			name:     "major bump with breaking changes",
+			current:  "1.0.0",
+			latest:   "2.0.0",
 			breaking: []domain.BreakingChange{{Description: "breaking change"}},
-			want:    domain.RiskCritical,
+			want:     domain.RiskCritical,
 		},
 		{
 			name:    "major bump without breaking changes",
@@ -28,11 +28,11 @@ func TestAssessRisk(t *testing.T) {
 			want:    domain.RiskHigh,
 		},
 		{
-			name:    "minor bump with breaking changes",
-			current: "1.0.0",
-			latest:  "1.1.0",
+			name:     "minor bump with breaking changes",
+			current:  "1.0.0",
+			latest:   "1.1.0",
 			breaking: []domain.BreakingChange{{Description: "breaking change"}},
-			want:    domain.RiskHigh,
+			want:     domain.RiskHigh,
 		},
 		{
 			name:    "minor bump without breaking changes",

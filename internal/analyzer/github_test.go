@@ -8,8 +8,8 @@ import (
 
 func TestIsBreakingLine(t *testing.T) {
 	tests := []struct {
-		line  string
-		want  bool
+		line string
+		want bool
 	}{
 		{"BREAKING: changed API", true},
 		{"breaking: changed API", true},

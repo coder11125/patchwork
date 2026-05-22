@@ -6,60 +6,60 @@ import (
 
 func TestParseLLMResponse(t *testing.T) {
 	tests := []struct {
-		name        string
-		response    string
-		pkgName     string
-		version     string
-		wantCount   int
-		wantErr     bool
+		name      string
+		response  string
+		pkgName   string
+		version   string
+		wantCount int
+		wantErr   bool
 	}{
 		{
-			name:        "valid JSON array with changes",
-			response:    `[{"id":"bc-1","package_name":"testpkg","version":"2.0.0","description":"breaking change","severity":"high","affected_apis":["Foo"],"migration_hint":"update","source_url":""}]`,
-			pkgName:     "testpkg",
-			version:     "2.0.0",
-			wantCount:   1,
-			wantErr:     false,
+			name:      "valid JSON array with changes",
+			response:  `[{"id":"bc-1","package_name":"testpkg","version":"2.0.0","description":"breaking change","severity":"high","affected_apis":["Foo"],"migration_hint":"update","source_url":""}]`,
+			pkgName:   "testpkg",
+			version:   "2.0.0",
+			wantCount: 1,
+			wantErr:   false,
 		},
 		{
-			name:        "empty array",
-			response:    `[]`,
-			pkgName:     "testpkg",
-			version:     "2.0.0",
-			wantCount:   0,
-			wantErr:     false,
+			name:      "empty array",
+			response:  `[]`,
+			pkgName:   "testpkg",
+			version:   "2.0.0",
+			wantCount: 0,
+			wantErr:   false,
 		},
 		{
-			name:        "text wrapped around JSON",
-			response:    `Here is the analysis:\n\n[{"id":"bc-1","package_name":"testpkg","version":"2.0.0","description":"breaking change","severity":"high"}]\n\nHope this helps.`,
-			pkgName:     "testpkg",
-			version:     "2.0.0",
-			wantCount:   1,
-			wantErr:     false,
+			name:      "text wrapped around JSON",
+			response:  `Here is the analysis:\n\n[{"id":"bc-1","package_name":"testpkg","version":"2.0.0","description":"breaking change","severity":"high"}]\n\nHope this helps.`,
+			pkgName:   "testpkg",
+			version:   "2.0.0",
+			wantCount: 1,
+			wantErr:   false,
 		},
 		{
-			name:        "no JSON found",
-			response:    "no breaking changes detected",
-			pkgName:     "testpkg",
-			version:     "2.0.0",
-			wantCount:   0,
-			wantErr:     true,
+			name:      "no JSON found",
+			response:  "no breaking changes detected",
+			pkgName:   "testpkg",
+			version:   "2.0.0",
+			wantCount: 0,
+			wantErr:   true,
 		},
 		{
-			name:        "empty response",
-			response:    "",
-			pkgName:     "testpkg",
-			version:     "2.0.0",
-			wantCount:   0,
-			wantErr:     true,
+			name:      "empty response",
+			response:  "",
+			pkgName:   "testpkg",
+			version:   "2.0.0",
+			wantCount: 0,
+			wantErr:   true,
 		},
 		{
-			name:        "fills in missing fields",
-			response:    `[{"description":"breaking change"}]`,
-			pkgName:     "testpkg",
-			version:     "2.0.0",
-			wantCount:   1,
-			wantErr:     false,
+			name:      "fills in missing fields",
+			response:  `[{"description":"breaking change"}]`,
+			pkgName:   "testpkg",
+			version:   "2.0.0",
+			wantCount: 1,
+			wantErr:   false,
 		},
 	}
 

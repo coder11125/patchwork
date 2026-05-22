@@ -95,6 +95,7 @@ func initRegistries() {
 	detectorRegistry.Register(&detector.NPMDetector{})
 	detectorRegistry.Register(&detector.PipDetector{})
 	detectorRegistry.Register(&detector.CargoDetector{})
+	detectorRegistry.Register(&detector.BundlerDetector{})
 
 	analyzerRegistry = analyzer.NewRegistry()
 
@@ -111,11 +112,13 @@ func initRegistries() {
 	codemodRegistry.Register(codemod.NewPackageJSONModifier())
 	codemodRegistry.Register(codemod.NewRequirementsModifier())
 	codemodRegistry.Register(codemod.NewCargoModifier())
+	codemodRegistry.Register(codemod.NewGemfileModifier())
 
 	testRunnerRegistry = testrunner.NewRegistry()
 	testRunnerRegistry.Register(testrunner.NewGoTestRunner())
 	testRunnerRegistry.Register(testrunner.NewNPMTestRunner())
 	testRunnerRegistry.Register(testrunner.NewCargoTestRunner())
+	testRunnerRegistry.Register(testrunner.NewBundlerTestRunner())
 
 	if appConfig.LLMProvider != "" {
 		llmCfg := domain.LLMConfig{

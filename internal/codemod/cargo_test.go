@@ -138,5 +138,3 @@ func TestUpdateInlineTableVersion(t *testing.T) {
 		})
 	}
 }
-
-
