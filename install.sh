@@ -59,11 +59,14 @@ install_binary() {
     err_exit "install directory does not exist: ${INSTALL_DIR}"
   fi
 
-  if ! install -m 0755 "$tmpfile" "$dest" 2>/dev/null; then
-    info "Permission denied — retrying with sudo"
-    if ! sudo install -m 0755 "$tmpfile" "$dest"; then
-      err_exit "failed to install to ${dest}"
-    fi
+  if cp "$tmpfile" "$dest" 2>/dev/null && chmod 0755 "$dest" 2>/dev/null; then
+    rm -f "$tmpfile"
+    return
+  fi
+
+  info "Permission denied — retrying with sudo"
+  if ! sudo cp "$tmpfile" "$dest" || ! sudo chmod 0755 "$dest"; then
+    err_exit "failed to install to ${dest}"
   fi
 
   rm -f "$tmpfile"
