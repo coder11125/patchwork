@@ -49,6 +49,7 @@ func runRun(cmd *cobra.Command, args []string) error {
 	detReg.Register(&detector.GoModDetector{})
 	detReg.Register(&detector.NPMDetector{})
 	detReg.Register(&detector.PipDetector{})
+	detReg.Register(&detector.CargoDetector{})
 
 	anReg := analyzer.NewRegistry()
 
@@ -63,10 +64,12 @@ func runRun(cmd *cobra.Command, args []string) error {
 	cmReg.Register(codemod.NewGoModModifier())
 	cmReg.Register(codemod.NewPackageJSONModifier())
 	cmReg.Register(codemod.NewRequirementsModifier())
+	cmReg.Register(codemod.NewCargoModifier())
 
 	trReg := testrunner.NewRegistry()
 	trReg.Register(testrunner.NewGoTestRunner())
 	trReg.Register(testrunner.NewNPMTestRunner())
+	trReg.Register(testrunner.NewCargoTestRunner())
 
 	var prCreator pr.PRCreator
 	gitCfg := appConfig.GitConfig()

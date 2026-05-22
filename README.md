@@ -6,13 +6,14 @@ Patchwork detects outdated packages, analyzes changelogs for breaking changes, p
 
 ## Features
 
-- **Multi-ecosystem detection** — Go modules, npm, pip (requirements.txt)
+- **Multi-ecosystem detection** — Go modules, npm, pip (requirements.txt), Cargo (Cargo.toml)
 - **Breaking change analysis** — GitHub releases, changelog parsing, semver risk assessment, LLM-powered analysis
 - **Recipe-driven learning** — Successful upgrades are saved as reusable recipes; future upgrades match against historical knowledge
-- **Safe codemod application** — Regex-based transformations, manifest updates (go.mod, package.json, requirements.txt)
+- **Safe codemod application** — Regex-based transformations, manifest updates (go.mod, package.json, requirements.txt, Cargo.toml)
 - **Isolated test execution** — Tests run in temp directories before changes touch your working tree
 - **PR automation** — Creates GitHub/GitLab pull requests for each upgrade
 - **Full pipeline** — `patchwork run` chains detect → analyze → plan → apply → pr
+- **OS keychain integration** — API keys and tokens stored in native OS keychain (macOS Keychain, Linux Secret Service, Windows Credential Manager)
 - **BYOK** — Bring your own LLM API key. Supports Anthropic Claude, Mistral, Groq, and local Ollama
 - **Local-first** — Works fully offline with Ollama as the default provider
 - **CLI-first** — Single binary, no server required
@@ -20,32 +21,34 @@ Patchwork detects outdated packages, analyzes changelogs for breaking changes, p
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                         patchwork CLI                           │
-│  detect │ analyze │ plan │ apply │ pr │ run                     │
-└────────────────────────┬────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                         patchwork CLI                               │
+│  configure │ detect │ analyze │ plan │ apply │ pr │ run │ serve      │
+└────────────────────────┬────────────────────────────────────────────┘
                          │
-┌────────────────────────▼────────────────────────────────────────┐
-│                        Pipeline                                 │
-│  Detect → Analyze → Plan → Apply → PR                           │
-└────┬──────────┬─────────┬────────┬────────┬─────────────────────┘
+┌────────────────────────▼────────────────────────────────────────────┐
+│                        Pipeline                                     │
+│  Detect → Analyze → Plan → Apply → PR                               │
+└────┬──────────┬─────────┬────────┬────────┬─────────────────────────┘
      │          │         │        │        │
 ┌────▼───┐ ┌───▼────┐ ┌──▼────┐ ┌─▼─────┐ ┌▼────────┐
 │Detector│ │Analyzer│ │Planner│ │Codemod│ │TestRunner│
 │Registry│ │Registry│ │       │ │Registry│ │Registry  │
 └────┬───┘ └───┬────┘ └──┬────┘ └─┬─────┘ └┬────────┘
      │          │         │        │        │
-  ┌──▼──┐    ┌──▼──┐   ┌──▼──┐  ┌─▼────┐ ┌─▼──────┐
-  │go.mod│    │GitHub│  │Recipe│  │regex │ │go test │
-  │pkg.json│  │release│ │Store │  │go.mod│ │npm test│
-  │req.txt │  │semver │ │      │  │pkg.json│       │
-  └──────┘   └──LLM──┘  └──────┘  └──────┘ └────────┘
-                                                  │
-                                            ┌─────▼─────┐
-                                            │   PRCreator │
-                                            │  GitHub API │
-                                            │  GitLab API │
-                                            └─────────────┘
+  ┌──▼────┐  ┌──▼──┐   ┌──▼──┐  ┌─▼──────┐ ┌─▼────────┐
+  │go.mod  │  │GitHub│  │Recipe│  │regex   │ │go test   │
+  │pkg.json│  │release│  │Store │  │go.mod  │ │npm test  │
+  │req.txt │  │semver │  │      │  │pkg.json│ │cargo test│
+  │Cargo   │  │LLM   │  │      │  │req.txt │ │          │
+  │.toml   │  │      │  │      │  │Cargo   │ │          │
+  └────────┘  └──────┘  └──────┘  │.toml   │ └──────────┘
+                                  └────────┘           │
+                                                  ┌─────▼─────┐
+                                                  │   PRCreator │
+                                                  │  GitHub API │
+                                                  │  GitLab API │
+                                                  └─────────────┘
 ```
 
 ### Package Layout
@@ -53,17 +56,18 @@ Patchwork detects outdated packages, analyzes changelogs for breaking changes, p
 | Package | Responsibility |
 |---|---|
 | `cmd/patchwork` | Single entry point, wires CLI |
-| `internal/cli` | Cobra commands: detect, analyze, plan, apply, pr, run |
-| `internal/config` | Koanf-based config loading (defaults → YAML → env → flags) |
-| `internal/detector` | Package detectors for Go, npm, pip ecosystems |
+| `internal/cli` | Cobra commands: configure, detect, analyze, plan, apply, pr, run, serve |
+| `internal/config` | Koanf-based config loading (defaults → YAML → keychain → env → flags) |
+| `internal/detector` | Package detectors for Go, npm, pip, Cargo ecosystems |
 | `internal/analyzer` | Changelog fetching, semver risk, LLM-powered breaking change analysis |
 | `internal/planner` | Upgrade plan generation with recipe matching and risk ordering |
-| `internal/codemod` | Code transformation engine (regex, go.mod, package.json, requirements.txt) |
-| `internal/testrunner` | Isolated test execution for Go and npm |
+| `internal/codemod` | Code transformation engine (regex, go.mod, package.json, requirements.txt, Cargo.toml) |
+| `internal/testrunner` | Isolated test execution for Go, npm, and Cargo |
 | `internal/pr` | PR creation via GitHub/GitLab REST APIs |
 | `internal/recipe` | Disk-based recipe store and episode recording |
 | `internal/pipeline` | Full workflow orchestration |
 | `internal/llm` | LLM provider abstraction (Anthropic, Mistral, Groq, Ollama) |
+| `internal/keyring` | OS keychain integration for API keys and tokens |
 | `pkg/domain` | Core domain types (Package, Upgrade, Recipe, Episode, etc.) |
 | `pkg/git` | Git operations wrapper |
 | `pkg/semver` | Semantic version utilities |
@@ -116,7 +120,16 @@ make help         # Show all targets
 
 ## Configuration
 
-Patchwork reads configuration in this precedence order: defaults → `~/.patchwork.yaml` → `PATCHWORK_*` env vars → CLI flags.
+Patchwork reads configuration in this precedence order: defaults → `~/.patchwork.yaml` → OS keychain → `PATCHWORK_*` env vars → CLI flags.
+
+### Quick setup via CLI
+
+```bash
+# Interactively store API keys in your OS keychain
+patchwork configure
+```
+
+This stores your LLM API key and Git token in the native OS keychain (macOS Keychain, Linux Secret Service, Windows Credential Manager). These are never written to disk or exposed in plaintext.
 
 ### Environment variables
 
@@ -166,7 +179,16 @@ verbose: true
 max_retries: 3
 ```
 
+API keys and tokens can be omitted from the config file and env vars if stored via `patchwork configure` — Patchwork falls back to the OS keychain automatically.
+
 ## Usage
+
+### Configure credentials
+
+```bash
+# Store LLM API key and Git token in OS keychain
+patchwork configure
+```
 
 ### Detect outdated packages
 
@@ -178,7 +200,7 @@ patchwork detect
 patchwork detect --dir /path/to/repo --format json
 
 # Filter by ecosystem
-patchwork detect --ecosystem go --output results.json
+patchwork detect --ecosystem cargo --output results.json
 ```
 
 ### Analyze packages for breaking changes
@@ -188,7 +210,7 @@ patchwork detect --ecosystem go --output results.json
 patchwork analyze
 
 # Analyze specific package
-patchwork analyze --package gin --ecosystem go
+patchwork analyze --package serde --ecosystem cargo
 ```
 
 ### Generate upgrade plan
@@ -220,7 +242,7 @@ patchwork apply --dry-run
 # Create PRs for all upgrades
 patchwork pr
 
-# Requires git_platform and git_token in config
+# Requires git_platform and git_token in config or keychain
 ```
 
 ### Run full pipeline
@@ -330,7 +352,7 @@ Recipes live in `~/.patchwork/recipes/` as `{recipeID}.json`. Episodes live in `
 
 - **No Python runtime** — Pure Go binary
 - **No OpenAI SDK** — Direct HTTP calls to each provider's REST API
-- **No external SDKs** — GitHub/GitLab via raw REST, git via CLI wrapper
+- **No external SDKs** — GitHub/GitLab via raw REST, git via CLI wrapper, crates.io via raw REST
 - **Explicit error handling** — No panics, no `must*` functions
 - **Interfaces for testability** — Every external dependency is behind an interface
 - **Local-first** — Ollama works fully offline; recipes bridge cloud and local modes

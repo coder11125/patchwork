@@ -38,6 +38,7 @@ func runDetect(cmd *cobra.Command, args []string) error {
 	registry.Register(&detector.GoModDetector{})
 	registry.Register(&detector.NPMDetector{})
 	registry.Register(&detector.PipDetector{})
+	registry.Register(&detector.CargoDetector{})
 
 	ctx := context.Background()
 
