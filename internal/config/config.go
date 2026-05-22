@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/coder11125/patchwork/internal/keyring"
 	"github.com/coder11125/patchwork/pkg/domain"
 	"github.com/knadh/koanf/parsers/yaml"
 	"github.com/knadh/koanf/providers/env"
@@ -54,6 +55,8 @@ func LoadConfig(flagSet *pflag.FlagSet) (*domain.Config, error) {
 		}
 	}
 
+	loadKeyringKeys(k)
+
 	if err := k.Load(env.Provider("PATCHWORK_", ".", func(s string) string {
 		return s
 	}), nil); err != nil {
@@ -76,6 +79,25 @@ func LoadConfig(flagSet *pflag.FlagSet) (*domain.Config, error) {
 	}
 
 	return &cfg, nil
+}
+
+func loadKeyringKeys(k *koanf.Koanf) {
+	if !keyring.IsAvailable() {
+		return
+	}
+
+	provider := k.String("llm_provider")
+	if provider != "" && k.String("llm_api_key") == "" {
+		if key, err := keyring.GetLLMAPIKey(provider); err == nil && key != "" {
+			_ = k.Set("llm_api_key", key)
+		}
+	}
+
+	if k.String("git_platform") != "" && k.String("git_token") == "" {
+		if token, err := keyring.GetGitToken(k.String("git_platform")); err == nil && token != "" {
+			_ = k.Set("git_token", token)
+		}
+	}
 }
 
 type confmapProvider map[string]any
