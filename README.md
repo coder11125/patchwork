@@ -6,10 +6,10 @@ Patchwork detects outdated packages, analyzes changelogs for breaking changes, p
 
 ## Features
 
-- **Multi-ecosystem detection** — Go modules, npm, pip (requirements.txt), Cargo (Cargo.toml), Ruby (Gemfile)
+- **Multi-ecosystem detection** — Go modules, npm, pip (requirements.txt), Cargo (Cargo.toml), Ruby (Gemfile), Maven (pom.xml)
 - **Breaking change analysis** — GitHub releases, changelog parsing, semver risk assessment, LLM-powered analysis
 - **Recipe-driven learning** — Successful upgrades are saved as reusable recipes; future upgrades match against historical knowledge
-- **Safe codemod application** — Regex-based transformations, manifest updates (go.mod, package.json, requirements.txt, Cargo.toml, Gemfile)
+- **Safe codemod application** — Regex-based transformations, manifest updates (go.mod, package.json, requirements.txt, Cargo.toml, Gemfile, pom.xml)
 - **Isolated test execution** — Tests run in temp directories before changes touch your working tree
 - **PR automation** — Creates GitHub/GitLab pull requests for each upgrade
 - **Full pipeline** — `patchwork run` chains detect → analyze → plan → apply → pr
@@ -43,7 +43,8 @@ Patchwork detects outdated packages, analyzes changelogs for breaking changes, p
    │Cargo   │  │LLM   │  │      │  │req.txt │ │bundle    │
    │.toml   │  │      │  │      │  │Cargo   │ │exec      │
    │Gemfile │  │      │  │      │  │.toml   │ │rspec     │
-   └────────┘  └──────┘  └──────┘  │Gemfile │ └──────────┘
+   │pom.xml │  │      │  │      │  │Gemfile │ │mvn test  │
+   └────────┘  └──────┘  └──────┘  │pom.xml │ └──────────┘
                                    └────────┘           │
                                                   ┌─────▼─────┐
                                                   │   PRCreator │
@@ -59,11 +60,11 @@ Patchwork detects outdated packages, analyzes changelogs for breaking changes, p
 | `cmd/patchwork` | Single entry point, wires CLI |
 | `internal/cli` | Cobra commands: configure, detect, analyze, plan, apply, pr, run, serve |
 | `internal/config` | Koanf-based config loading (defaults → YAML → keychain → env → flags) |
-| `internal/detector` | Package detectors for Go, npm, pip, Cargo, Ruby ecosystems |
+| `internal/detector` | Package detectors for Go, npm, pip, Cargo, Ruby, Maven ecosystems |
 | `internal/analyzer` | Changelog fetching, semver risk, LLM-powered breaking change analysis |
 | `internal/planner` | Upgrade plan generation with recipe matching and risk ordering |
-| `internal/codemod` | Code transformation engine (regex, go.mod, package.json, requirements.txt, Cargo.toml, Gemfile) |
-| `internal/testrunner` | Isolated test execution for Go, npm, Cargo, and Ruby (Bundler) |
+| `internal/codemod` | Code transformation engine (regex, go.mod, package.json, requirements.txt, Cargo.toml, Gemfile, pom.xml) |
+| `internal/testrunner` | Isolated test execution for Go, npm, Cargo, Ruby (Bundler), and Maven |
 | `internal/pr` | PR creation via GitHub/GitLab REST APIs |
 | `internal/recipe` | Disk-based recipe store and episode recording |
 | `internal/pipeline` | Full workflow orchestration |
