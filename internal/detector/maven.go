@@ -132,7 +132,7 @@ func (d *MavenDetector) Detect(ctx context.Context, dir string) (*domain.DetectR
 					Name:       key,
 					Current:    version,
 					Latest:     latest,
-			IsOutdated: isVersionOutdated(version, latest),
+					IsOutdated: isVersionOutdated(version, latest),
 					IsDirect:   true,
 				})
 			}

@@ -73,10 +73,10 @@ func (r *BundlerTestRunner) Run(ctx context.Context, dir string) (*TestResult, e
 	outputStr := string(lastOutput)
 
 	result := &TestResult{
-		Output:       outputStr,
-		Duration:     duration,
-		Passed:       false,
-		FailedTests:  parseRSpecFailedTests(outputStr),
+		Output:      outputStr,
+		Duration:    duration,
+		Passed:      false,
+		FailedTests: parseRSpecFailedTests(outputStr),
 	}
 	logger.Warn("ruby tests failed", "duration", duration, "error", lastErr, "failed_count", len(result.FailedTests))
 	return result, nil

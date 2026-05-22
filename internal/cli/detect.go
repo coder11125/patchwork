@@ -27,7 +27,7 @@ var detectCmd = &cobra.Command{
 
 func init() {
 	detectCmd.Flags().StringVar(&detectDir, "dir", ".", "directory to scan")
-	detectCmd.Flags().StringVar(&detectEcosystem, "ecosystem", "", "filter by ecosystem (go, npm, pip, cargo)")
+	detectCmd.Flags().StringVar(&detectEcosystem, "ecosystem", "", "filter by ecosystem (go, npm, pip, cargo, bundler, maven)")
 	detectCmd.Flags().StringVar(&detectOutput, "output", "", "write JSON output to file")
 	detectCmd.Flags().StringVar(&detectFormat, "format", "table", "output format: table or json")
 }
@@ -38,6 +38,8 @@ func runDetect(cmd *cobra.Command, args []string) error {
 	registry.Register(&detector.NPMDetector{})
 	registry.Register(&detector.PipDetector{})
 	registry.Register(&detector.CargoDetector{})
+	registry.Register(&detector.BundlerDetector{})
+	registry.Register(&detector.MavenDetector{})
 
 	ctx := signalContext()
 
