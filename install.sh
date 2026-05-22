@@ -7,7 +7,6 @@ INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
 GITHUB_URL="https://github.com/${REPO}"
 
 info()    { echo "==> $*"; }
-warn()    { echo "!!> $*" >&2; }
 err_exit(){ echo "!!> $*" >&2; exit 1; }
 
 detect_os() {
@@ -27,57 +26,16 @@ detect_arch() {
 }
 
 latest_release() {
-  local tag
-  tag=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-  if [ -z "$tag" ]; then
-    err_exit "could not determine latest release"
-  fi
-  echo "$tag"
-}
-
-download_binary() {
-  local version="$1" os="$2" arch="$3"
-  local filename="${BINARY}-${os}-${arch}"
-  local download_url="${GITHUB_URL}/releases/download/${version}/${filename}"
-  local tmpfile
-  tmpfile=$(mktemp)
-
-  info "Downloading ${download_url}"
-  if ! curl -fsSL -o "$tmpfile" "$download_url"; then
-    rm -f "$tmpfile"
-    err_exit "download failed — check that release ${version} exists for ${os}/${arch}"
-  fi
-
-  echo "$tmpfile"
-}
-
-install_binary() {
-  local tmpfile="$1"
-  local dest="${INSTALL_DIR}/${BINARY}"
-
-  if [ ! -d "$INSTALL_DIR" ]; then
-    err_exit "install directory does not exist: ${INSTALL_DIR}"
-  fi
-
-  if cp "$tmpfile" "$dest" 2>/dev/null && chmod 0755 "$dest" 2>/dev/null; then
-    rm -f "$tmpfile"
-    return
-  fi
-
-  info "Permission denied — retrying with sudo"
-  if ! sudo cp "$tmpfile" "$dest" || ! sudo chmod 0755 "$dest"; then
-    err_exit "failed to install to ${dest}"
-  fi
-
-  rm -f "$tmpfile"
+  curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'
 }
 
 main() {
   local version="${1:-}"
-  local os arch tmpfile
+  local os arch dest
 
   os=$(detect_os)
   arch=$(detect_arch)
+  dest="${INSTALL_DIR}/${BINARY}"
 
   info "Detected ${os}/${arch}"
 
@@ -87,13 +45,21 @@ main() {
 
   info "Installing ${BINARY} ${version}"
 
-  tmpfile=$(download_binary "$version" "$os" "$arch")
-  trap 'rm -f "$tmpfile"' EXIT
+  local filename="${BINARY}-${os}-${arch}"
+  local download_url="${GITHUB_URL}/releases/download/${version}/${filename}"
 
-  install_binary "$tmpfile"
+  info "Downloading ${download_url}"
 
-  info "Installed to $(command -v "$BINARY" 2>/dev/null || echo "${dest}")"
-  info "Run 'patchwork --help' to get started"
+  if curl -fsSL -o "$dest" "$download_url" 2>/dev/null; then
+    chmod 0755 "$dest"
+  elif sudo curl -fsSL -o "$dest" "$download_url" 2>/dev/null; then
+    sudo chmod 0755 "$dest"
+  else
+    err_exit "download failed"
+  fi
+
+  info "Installed to ${dest}"
+  info "Run '${BINARY} --help' to get started"
 }
 
 main "$@"
