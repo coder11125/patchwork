@@ -1,6 +1,7 @@
 package keyring
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/zalando/go-keyring"
@@ -42,7 +43,8 @@ func DeleteGitToken(platform string) error {
 }
 
 func IsAvailable() bool {
-	return true
+	_, err := keyring.Get("patchwork-check", "availability")
+	return err == nil || errors.Is(err, keyring.ErrNotFound)
 }
 
 var ErrNotAvailable = fmt.Errorf("OS keychain not available")
