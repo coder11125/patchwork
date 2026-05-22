@@ -1,13 +1,18 @@
 package cli
 
 import (
+	"context"
+	"fmt"
 	"log/slog"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/coder11125/patchwork/internal/analyzer"
 	"github.com/coder11125/patchwork/internal/codemod"
 	"github.com/coder11125/patchwork/internal/config"
 	"github.com/coder11125/patchwork/internal/detector"
+	"github.com/coder11125/patchwork/internal/llm"
 	"github.com/coder11125/patchwork/internal/planner"
 	"github.com/coder11125/patchwork/internal/pr"
 	"github.com/coder11125/patchwork/internal/recipe"
@@ -16,6 +21,11 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
+
+func signalContext() context.Context {
+	ctx, _ := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	return ctx
+}
 
 var rootCmd = &cobra.Command{
 	Use:   "patchwork",
@@ -85,11 +95,13 @@ func loadConfig(cmd *cobra.Command, args []string) error {
 		logger.Info("dry-run mode enabled")
 	}
 
-	initRegistries()
+	if err := initRegistries(); err != nil {
+		return err
+	}
 	return nil
 }
 
-func initRegistries() {
+func initRegistries() error {
 	detectorRegistry = detector.NewRegistry()
 	detectorRegistry.Register(&detector.GoModDetector{})
 	detectorRegistry.Register(&detector.NPMDetector{})
@@ -103,7 +115,7 @@ func initRegistries() {
 	var err error
 	recipeStoreInstance, err = recipe.NewDiskStore(appConfig.RecipeDir, appConfig.EpisodeDir, logger)
 	if err != nil {
-		logger.Error("failed to create recipe store", "error", err)
+		return fmt.Errorf("create recipe store: %w", err)
 	}
 	plannerInstance = planner.New(recipeStoreInstance)
 
@@ -123,14 +135,15 @@ func initRegistries() {
 	testRunnerRegistry.Register(testrunner.NewBundlerTestRunner())
 	testRunnerRegistry.Register(testrunner.NewMavenTestRunner())
 
-	if appConfig.LLMProvider != "" {
-		llmCfg := domain.LLMConfig{
+	if appConfig.LLMProvider != "" && appConfig.LLMAPIKey != "" {
+		if _, err := llm.NewProvider(domain.LLMConfig{
 			Provider: domain.LLMProviderType(appConfig.LLMProvider),
 			Model:    appConfig.LLMModel,
 			APIKey:   appConfig.LLMAPIKey,
 			BaseURL:  appConfig.LLMBaseURL,
+		}); err != nil {
+			logger.Warn("failed to create LLM provider", "error", err)
 		}
-		_ = llmCfg
 	}
 
 	if appConfig.GitConfig().Platform != "" && appConfig.GitConfig().Token != "" {
@@ -139,4 +152,6 @@ func initRegistries() {
 			logger.Warn("failed to create PR creator", "error", err)
 		}
 	}
+
+	return nil
 }

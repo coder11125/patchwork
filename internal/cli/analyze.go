@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -33,7 +32,7 @@ func init() {
 }
 
 func runAnalyze(cmd *cobra.Command, args []string) error {
-	ctx := context.Background()
+	ctx := signalContext()
 
 	var ecosystemFilter domain.Ecosystem
 	if analyzeEcosystem != "" {

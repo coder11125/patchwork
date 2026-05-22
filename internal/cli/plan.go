@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -29,7 +28,7 @@ func init() {
 }
 
 func runPlan(cmd *cobra.Command, args []string) error {
-	ctx := context.Background()
+	ctx := signalContext()
 
 	detections, err := detectorRegistry.DetectAll(ctx, planDir)
 	if err != nil {

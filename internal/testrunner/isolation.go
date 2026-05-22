@@ -47,6 +47,11 @@ func CopyDir(src, dst string) error {
 }
 
 func copyFile(src, dst string) error {
+	srcInfo, err := os.Stat(src)
+	if err != nil {
+		return fmt.Errorf("stat source %s: %w", src, err)
+	}
+
 	in, err := os.Open(src)
 	if err != nil {
 		return fmt.Errorf("open source %s: %w", src, err)
@@ -61,11 +66,6 @@ func copyFile(src, dst string) error {
 
 	if _, err := io.Copy(out, in); err != nil {
 		return fmt.Errorf("copy contents %s -> %s: %w", src, dst, err)
-	}
-
-	srcInfo, err := os.Stat(src)
-	if err != nil {
-		return fmt.Errorf("stat source %s: %w", src, err)
 	}
 
 	if err := os.Chmod(dst, srcInfo.Mode()); err != nil {

@@ -60,7 +60,7 @@ func (d *BundlerDetector) Detect(ctx context.Context, dir string) (*domain.Detec
 			Name:       name,
 			Current:    version,
 			Latest:     latest,
-			IsOutdated: version != latest && version != "",
+			IsOutdated: isVersionOutdated(version, latest),
 			IsDirect:   true,
 		})
 	}

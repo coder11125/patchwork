@@ -8,7 +8,22 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/coder11125/patchwork/pkg/domain"
+	"github.com/coder11125/patchwork/pkg/semver"
 )
+
+func isVersionOutdated(current, latest string) bool {
+	if current == "" {
+		return false
+	}
+	if latest == "" {
+		return false
+	}
+	newer, err := semver.IsNewer(current, latest)
+	if err != nil {
+		return current != latest
+	}
+	return newer
+}
 
 type PackageDetector interface {
 	Ecosystem() domain.Ecosystem

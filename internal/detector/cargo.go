@@ -54,7 +54,7 @@ func (d *CargoDetector) Detect(ctx context.Context, dir string) (*domain.DetectR
 			Name:       dep.name,
 			Current:    dep.version,
 			Latest:     latest,
-			IsOutdated: dep.version != latest && dep.version != "",
+			IsOutdated: isVersionOutdated(dep.version, latest),
 			IsDirect:   true,
 		})
 	}

@@ -42,8 +42,7 @@ func DeleteGitToken(platform string) error {
 }
 
 func IsAvailable() bool {
-	_, err := keyring.Get("patchwork-test", "test")
-	return err == nil || err == keyring.ErrNotFound
+	return true
 }
 
 var ErrNotAvailable = fmt.Errorf("OS keychain not available")

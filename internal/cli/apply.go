@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -29,7 +28,7 @@ func init() {
 }
 
 func runApply(cmd *cobra.Command, args []string) error {
-	ctx := context.Background()
+	ctx := signalContext()
 
 	var plan *domain.PlanResult
 

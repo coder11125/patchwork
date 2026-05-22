@@ -64,6 +64,8 @@ func (s *Server) handleDetect(w http.ResponseWriter, r *http.Request) {
 		req.Dir = "."
 	}
 
+	s.pipeline.SetWorkDir(req.Dir)
+
 	results, err := s.pipeline.Detect(r.Context())
 	if err != nil {
 		s.logger.Error("detect failed", "error", err)
@@ -86,6 +88,8 @@ func (s *Server) handlePlan(w http.ResponseWriter, r *http.Request) {
 	if req.Dir == "" {
 		req.Dir = "."
 	}
+
+	s.pipeline.SetWorkDir(req.Dir)
 
 	detections, err := s.pipeline.Detect(r.Context())
 	if err != nil {
@@ -123,6 +127,8 @@ func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 	if req.Dir == "" {
 		req.Dir = "."
 	}
+
+	s.pipeline.SetWorkDir(req.Dir)
 
 	plan, err := s.pipeline.Run(r.Context())
 	if err != nil {

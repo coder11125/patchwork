@@ -19,6 +19,7 @@ const (
 
 type GroqProvider struct {
 	apiKey      string
+	baseURL     string
 	model       string
 	maxTokens   int
 	temperature float64
@@ -88,6 +89,7 @@ func NewGroq(cfg domain.LLMConfig) (*GroqProvider, error) {
 
 	return &GroqProvider{
 		apiKey:      cfg.APIKey,
+		baseURL:     cfg.BaseURL,
 		model:       model,
 		maxTokens:   maxTokens,
 		temperature: cfg.Temperature,
@@ -95,6 +97,13 @@ func NewGroq(cfg domain.LLMConfig) (*GroqProvider, error) {
 			Timeout: timeout,
 		},
 	}, nil
+}
+
+func (p *GroqProvider) apiURL() string {
+	if p.baseURL != "" {
+		return p.baseURL
+	}
+	return groqAPIURL
 }
 
 func (p *GroqProvider) Name() string {
@@ -167,7 +176,7 @@ func (p *GroqProvider) doRequest(ctx context.Context, reqBody groqRequest) (stri
 		return "", fmt.Errorf("groq: failed to marshal request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, groqAPIURL, bytes.NewReader(jsonBody))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, p.apiURL(), bytes.NewReader(jsonBody))
 	if err != nil {
 		return "", fmt.Errorf("groq: failed to create request: %w", err)
 	}
@@ -191,7 +200,7 @@ func (p *GroqProvider) doRequest(ctx context.Context, reqBody groqRequest) (stri
 		if parseErr := json.Unmarshal(body, &errResp); parseErr == nil && errResp.Error != nil {
 			return "", fmt.Errorf("groq: API error (status %d): %s", resp.StatusCode, errResp.Error.Message)
 		}
-		return "", fmt.Errorf("groq: HTTP error (status %d): %s", resp.StatusCode, string(body))
+		return "", fmt.Errorf("groq: HTTP error (status %d): %s", resp.StatusCode, sanitizeBody(body, p.apiKey))
 	}
 
 	var apiResp groqResponse
@@ -208,7 +217,7 @@ func (p *GroqProvider) doRequest(ctx context.Context, reqBody groqRequest) (stri
 
 func (p *GroqProvider) withRetry(ctx context.Context, fn func(context.Context) error) error {
 	var lastErr error
-	for attempt := 0; attempt <= groqMaxRetries; attempt++ {
+	for attempt := 0; attempt < groqMaxRetries; attempt++ {
 		if attempt > 0 {
 			backoff := time.Duration(1<<uint(attempt-1)) * time.Second
 			select {

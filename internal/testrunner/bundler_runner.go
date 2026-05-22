@@ -34,28 +34,51 @@ func (r *BundlerTestRunner) Run(ctx context.Context, dir string) (*TestResult, e
 
 	start := time.Now()
 
-	cmd := exec.CommandContext(ctx, "bundle", "exec", "rspec")
-	cmd.Dir = dir
+	commands := [][]string{
+		{"bundle", "exec", "rspec"},
+		{"bundle", "exec", "rake", "test"},
+		{"bundle", "exec", "rake"},
+	}
 
-	output, err := cmd.CombinedOutput()
+	var lastOutput []byte
+	var lastErr error
+
+	for _, args := range commands {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+		}
+
+		cmd := exec.CommandContext(ctx, args[0], args[1:]...)
+		cmd.Dir = dir
+
+		output, err := cmd.CombinedOutput()
+		lastOutput = output
+		lastErr = err
+
+		if err == nil {
+			duration := time.Since(start)
+			result := &TestResult{
+				Output:   string(output),
+				Duration: duration,
+				Passed:   true,
+			}
+			logger.Info("ruby tests passed", "duration", duration)
+			return result, nil
+		}
+	}
+
 	duration := time.Since(start)
-
-	outputStr := string(output)
+	outputStr := string(lastOutput)
 
 	result := &TestResult{
-		Output:   outputStr,
-		Duration: duration,
+		Output:       outputStr,
+		Duration:     duration,
+		Passed:       false,
+		FailedTests:  parseRSpecFailedTests(outputStr),
 	}
-
-	if err != nil {
-		result.Passed = false
-		result.FailedTests = parseRSpecFailedTests(outputStr)
-		logger.Warn("ruby tests failed", "duration", duration, "failed_count", len(result.FailedTests))
-		return result, nil
-	}
-
-	result.Passed = true
-	logger.Info("ruby tests passed", "duration", duration)
+	logger.Warn("ruby tests failed", "duration", duration, "error", lastErr, "failed_count", len(result.FailedTests))
 	return result, nil
 }
 

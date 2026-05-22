@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/coder11125/patchwork/internal/keyring"
 	"github.com/coder11125/patchwork/pkg/domain"
@@ -43,11 +44,19 @@ func LoadConfig(flagSet *pflag.FlagSet) (*domain.Config, error) {
 		return nil, fmt.Errorf("load defaults: %w", err)
 	}
 
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return nil, fmt.Errorf("get home dir: %w", err)
+	configPath := ""
+	if flagSet != nil {
+		if v, err := flagSet.GetString("config"); err == nil && v != "" {
+			configPath = v
+		}
 	}
-	configPath := filepath.Join(homeDir, ".patchwork.yaml")
+	if configPath == "" {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return nil, fmt.Errorf("get home dir: %w", err)
+		}
+		configPath = filepath.Join(homeDir, ".patchwork.yaml")
+	}
 
 	if _, statErr := os.Stat(configPath); statErr == nil {
 		if err := k.Load(file.Provider(configPath), yaml.Parser()); err != nil {
@@ -58,7 +67,7 @@ func LoadConfig(flagSet *pflag.FlagSet) (*domain.Config, error) {
 	loadKeyringKeys(k)
 
 	if err := k.Load(env.Provider("PATCHWORK_", ".", func(s string) string {
-		return s
+		return strings.Replace(strings.ToLower(strings.TrimPrefix(s, "PATCHWORK_")), "_", ".", -1)
 	}), nil); err != nil {
 		return nil, fmt.Errorf("load env vars: %w", err)
 	}
@@ -82,10 +91,6 @@ func LoadConfig(flagSet *pflag.FlagSet) (*domain.Config, error) {
 }
 
 func loadKeyringKeys(k *koanf.Koanf) {
-	if !keyring.IsAvailable() {
-		return
-	}
-
 	provider := k.String("llm_provider")
 	if provider != "" && k.String("llm_api_key") == "" {
 		if key, err := keyring.GetLLMAPIKey(provider); err == nil && key != "" {

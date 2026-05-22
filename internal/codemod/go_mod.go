@@ -80,9 +80,7 @@ func (m *GoModModifier) UpdateManifest(ctx context.Context, manifestPath string,
 			if req.Mod.Version == targetVersion {
 				return nil
 			}
-			if err := f.AddRequire(req.Mod.Path, targetVersion); err != nil {
-				return fmt.Errorf("updating require directive for %s: %w", packageName, err)
-			}
+			f.AddNewRequire(req.Mod.Path, targetVersion, req.Indirect)
 			updated = true
 			break
 		}

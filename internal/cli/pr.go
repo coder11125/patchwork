@@ -1,8 +1,8 @@
 package cli
 
 import (
-	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"text/tabwriter"
@@ -29,7 +29,7 @@ func init() {
 }
 
 func runPR(cmd *cobra.Command, args []string) error {
-	ctx := context.Background()
+	ctx := signalContext()
 
 	if prCreatorInstance == nil {
 		return fmt.Errorf("PR creator not configured: set git_platform and git_token in config or environment")
@@ -69,11 +69,12 @@ func runPR(cmd *cobra.Command, args []string) error {
 		})
 		if err != nil {
 			var existsErr *pr.PRExistsError
-			if ok := false; !ok {
-				logger.Warn("failed to create PR", "package", upgrade.Upgrade.Name, "error", err)
+			if errors.As(err, &existsErr) {
+				logger.Warn("PR already exists, skipping", "package", upgrade.Upgrade.Name)
 				continue
 			}
-			_ = existsErr
+			logger.Warn("failed to create PR", "package", upgrade.Upgrade.Name, "error", err)
+			continue
 		}
 		responses = append(responses, resp)
 	}

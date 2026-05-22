@@ -45,6 +45,10 @@ func New(cfg *domain.Config, gitCfg *domain.GitConfig, workDir string, detectors
 	}
 }
 
+func (p *Pipeline) SetWorkDir(dir string) {
+	p.workDir = dir
+}
+
 func (p *Pipeline) Run(ctx context.Context) (*domain.PlanResult, error) {
 	detections, err := p.Detect(ctx)
 	if err != nil {
@@ -186,6 +190,11 @@ func (p *Pipeline) Apply(ctx context.Context, plan *domain.PlanResult) error {
 
 func (p *Pipeline) CreatePRs(ctx context.Context, plan *domain.PlanResult) ([]*pr.PRResponse, error) {
 	p.logger.Info("running pr stage")
+
+	if p.prCreator == nil {
+		p.logger.Warn("PR creator not configured, skipping PR creation")
+		return nil, nil
+	}
 
 	var prs []*pr.PRResponse
 

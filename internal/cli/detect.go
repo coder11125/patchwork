@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -40,7 +39,7 @@ func runDetect(cmd *cobra.Command, args []string) error {
 	registry.Register(&detector.PipDetector{})
 	registry.Register(&detector.CargoDetector{})
 
-	ctx := context.Background()
+	ctx := signalContext()
 
 	var results []*domain.DetectResult
 	var err error

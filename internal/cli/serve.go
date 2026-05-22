@@ -44,6 +44,8 @@ func runServe(cmd *cobra.Command, args []string) error {
 	detReg.Register(&detector.NPMDetector{})
 	detReg.Register(&detector.PipDetector{})
 	detReg.Register(&detector.CargoDetector{})
+	detReg.Register(&detector.BundlerDetector{})
+	detReg.Register(&detector.MavenDetector{})
 
 	anReg := analyzer.NewRegistry()
 
@@ -59,11 +61,15 @@ func runServe(cmd *cobra.Command, args []string) error {
 	cmReg.Register(codemod.NewPackageJSONModifier())
 	cmReg.Register(codemod.NewRequirementsModifier())
 	cmReg.Register(codemod.NewCargoModifier())
+	cmReg.Register(codemod.NewGemfileModifier())
+	cmReg.Register(codemod.NewMavenModifier())
 
 	trReg := testrunner.NewRegistry()
 	trReg.Register(testrunner.NewGoTestRunner())
 	trReg.Register(testrunner.NewNPMTestRunner())
 	trReg.Register(testrunner.NewCargoTestRunner())
+	trReg.Register(testrunner.NewBundlerTestRunner())
+	trReg.Register(testrunner.NewMavenTestRunner())
 
 	var prCreator pr.PRCreator
 	gitCfg := appConfig.GitConfig()

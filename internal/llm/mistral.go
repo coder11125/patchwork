@@ -19,6 +19,7 @@ const (
 
 type MistralProvider struct {
 	apiKey      string
+	baseURL     string
 	model       string
 	maxTokens   int
 	temperature float64
@@ -88,6 +89,7 @@ func NewMistral(cfg domain.LLMConfig) (*MistralProvider, error) {
 
 	return &MistralProvider{
 		apiKey:      cfg.APIKey,
+		baseURL:     cfg.BaseURL,
 		model:       model,
 		maxTokens:   maxTokens,
 		temperature: cfg.Temperature,
@@ -95,6 +97,13 @@ func NewMistral(cfg domain.LLMConfig) (*MistralProvider, error) {
 			Timeout: timeout,
 		},
 	}, nil
+}
+
+func (p *MistralProvider) apiURL() string {
+	if p.baseURL != "" {
+		return p.baseURL
+	}
+	return mistralAPIURL
 }
 
 func (p *MistralProvider) Name() string {
@@ -167,7 +176,7 @@ func (p *MistralProvider) doRequest(ctx context.Context, reqBody mistralRequest)
 		return "", fmt.Errorf("mistral: failed to marshal request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, mistralAPIURL, bytes.NewReader(jsonBody))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, p.apiURL(), bytes.NewReader(jsonBody))
 	if err != nil {
 		return "", fmt.Errorf("mistral: failed to create request: %w", err)
 	}
@@ -191,7 +200,7 @@ func (p *MistralProvider) doRequest(ctx context.Context, reqBody mistralRequest)
 		if parseErr := json.Unmarshal(body, &errResp); parseErr == nil && errResp.Error != nil {
 			return "", fmt.Errorf("mistral: API error (status %d): %s", resp.StatusCode, errResp.Error.Message)
 		}
-		return "", fmt.Errorf("mistral: HTTP error (status %d): %s", resp.StatusCode, string(body))
+		return "", fmt.Errorf("mistral: HTTP error (status %d): %s", resp.StatusCode, sanitizeBody(body, p.apiKey))
 	}
 
 	var apiResp mistralResponse
@@ -208,7 +217,7 @@ func (p *MistralProvider) doRequest(ctx context.Context, reqBody mistralRequest)
 
 func (p *MistralProvider) withRetry(ctx context.Context, fn func(context.Context) error) error {
 	var lastErr error
-	for attempt := 0; attempt <= mistralMaxRetries; attempt++ {
+	for attempt := 0; attempt < mistralMaxRetries; attempt++ {
 		if attempt > 0 {
 			backoff := time.Duration(1<<uint(attempt-1)) * time.Second
 			select {

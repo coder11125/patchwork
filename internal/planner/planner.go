@@ -42,15 +42,8 @@ func (p *Planner) Plan(ctx context.Context, detections []*domain.DetectResult, c
 
 	totalRisk := domain.RiskLow
 	for _, u := range upgrades {
-		if u.Upgrade.RiskLevel == domain.RiskCritical {
-			totalRisk = domain.RiskCritical
-			break
-		}
-		if u.Upgrade.RiskLevel == domain.RiskHigh && totalRisk != domain.RiskCritical {
-			totalRisk = domain.RiskHigh
-		}
-		if u.Upgrade.RiskLevel == domain.RiskMedium && totalRisk == domain.RiskLow {
-			totalRisk = domain.RiskMedium
+		if riskRank(u.Upgrade.RiskLevel) > riskRank(totalRisk) {
+			totalRisk = u.Upgrade.RiskLevel
 		}
 	}
 

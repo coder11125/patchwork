@@ -27,53 +27,64 @@ func (d *PipDetector) CanHandle(filePath string) bool {
 }
 
 func (d *PipDetector) Detect(ctx context.Context, dir string) (*domain.DetectResult, error) {
-	reqPath := filepath.Join(dir, "requirements.txt")
-	if _, err := os.Stat(reqPath); os.IsNotExist(err) {
-		return nil, nil
-	}
-
-	f, err := os.Open(reqPath)
-	if err != nil {
-		return nil, fmt.Errorf("open requirements.txt: %w", err)
-	}
-	defer f.Close()
-
 	var packages []domain.PackageInfo
-	scanner := bufio.NewScanner(f)
+	var manifestPath string
 
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" || strings.HasPrefix(line, "#") || strings.HasPrefix(line, "-") {
+	for _, file := range []string{"requirements.txt", "requirements-dev.txt"} {
+		reqPath := filepath.Join(dir, file)
+		if _, err := os.Stat(reqPath); os.IsNotExist(err) {
 			continue
 		}
 
-		name, current := parseRequirementLine(line)
-		if name == "" {
-			continue
-		}
+		manifestPath = reqPath
 
-		latest, err := fetchLatestPipVersion(ctx, name)
+		f, err := os.Open(reqPath)
 		if err != nil {
-			continue
+			return nil, fmt.Errorf("open %s: %w", file, err)
 		}
 
-		packages = append(packages, domain.PackageInfo{
-			Name:       name,
-			Current:    current,
-			Latest:     latest,
-			IsOutdated: current != latest && current != "",
-			IsDirect:   true,
-		})
+		scanner := bufio.NewScanner(f)
+
+		for scanner.Scan() {
+			line := strings.TrimSpace(scanner.Text())
+			if line == "" || strings.HasPrefix(line, "#") || strings.HasPrefix(line, "-") {
+				continue
+			}
+
+			name, current := parseRequirementLine(line)
+			if name == "" {
+				continue
+			}
+
+			latest, err := fetchLatestPipVersion(ctx, name)
+			if err != nil {
+				continue
+			}
+
+			packages = append(packages, domain.PackageInfo{
+				Name:       name,
+				Current:    current,
+				Latest:     latest,
+				IsOutdated: isVersionOutdated(current, latest),
+				IsDirect:   true,
+			})
+		}
+
+		if err := scanner.Err(); err != nil {
+			f.Close()
+			return nil, fmt.Errorf("scan %s: %w", file, err)
+		}
+		f.Close()
 	}
 
-	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("scan requirements.txt: %w", err)
+	if manifestPath == "" {
+		return nil, nil
 	}
 
 	return &domain.DetectResult{
 		Ecosystem:    domain.EcosystemPip,
 		Dir:          dir,
-		ManifestPath: reqPath,
+		ManifestPath: manifestPath,
 		Packages:     packages,
 		DetectedAt:   time.Now(),
 	}, nil

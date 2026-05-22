@@ -58,7 +58,7 @@ func (d *GoModDetector) Detect(ctx context.Context, dir string) (*domain.DetectR
 			Name:       req.Mod.Path,
 			Current:    req.Mod.Version,
 			Latest:     latest,
-			IsOutdated: req.Mod.Version != latest,
+			IsOutdated: isVersionOutdated(req.Mod.Version, latest),
 			IsDirect:   true,
 		})
 	}

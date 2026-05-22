@@ -69,7 +69,7 @@ func (d *NPMDetector) Detect(ctx context.Context, dir string) (*domain.DetectRes
 			Name:       name,
 			Current:    current,
 			Latest:     latest,
-			IsOutdated: current != latest && current != "",
+			IsOutdated: isVersionOutdated(current, latest),
 			IsDirect:   true,
 		})
 	}

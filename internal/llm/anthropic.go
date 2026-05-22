@@ -20,6 +20,7 @@ const (
 
 type AnthropicProvider struct {
 	apiKey      string
+	baseURL     string
 	model       string
 	maxTokens   int
 	temperature float64
@@ -80,6 +81,7 @@ func NewAnthropic(cfg domain.LLMConfig) (*AnthropicProvider, error) {
 
 	return &AnthropicProvider{
 		apiKey:      cfg.APIKey,
+		baseURL:     cfg.BaseURL,
 		model:       model,
 		maxTokens:   maxTokens,
 		temperature: cfg.Temperature,
@@ -87,6 +89,13 @@ func NewAnthropic(cfg domain.LLMConfig) (*AnthropicProvider, error) {
 			Timeout: timeout,
 		},
 	}, nil
+}
+
+func (p *AnthropicProvider) apiURL() string {
+	if p.baseURL != "" {
+		return p.baseURL
+	}
+	return anthropicAPIURL
 }
 
 func (p *AnthropicProvider) Name() string {
@@ -105,12 +114,8 @@ func (p *AnthropicProvider) Chat(ctx context.Context, messages []Message) (strin
 		if m.Role == "system" {
 			systemMsg = m.Content
 		} else {
-			role := m.Role
-			if role == "assistant" {
-				role = "assistant"
-			}
 			chatMessages = append(chatMessages, anthropicMessage{
-				Role:    role,
+				Role:    m.Role,
 				Content: m.Content,
 			})
 		}
@@ -170,7 +175,7 @@ func (p *AnthropicProvider) doRequest(ctx context.Context, reqBody anthropicRequ
 		return "", fmt.Errorf("anthropic: failed to marshal request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, anthropicAPIURL, bytes.NewReader(jsonBody))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, p.apiURL(), bytes.NewReader(jsonBody))
 	if err != nil {
 		return "", fmt.Errorf("anthropic: failed to create request: %w", err)
 	}
@@ -195,7 +200,7 @@ func (p *AnthropicProvider) doRequest(ctx context.Context, reqBody anthropicRequ
 		if parseErr := json.Unmarshal(body, &apiErr); parseErr == nil && apiErr.Error != nil {
 			return "", fmt.Errorf("anthropic: API error (status %d): %s - %s", resp.StatusCode, apiErr.Error.Type, apiErr.Error.Message)
 		}
-		return "", fmt.Errorf("anthropic: HTTP error (status %d): %s", resp.StatusCode, string(body))
+		return "", fmt.Errorf("anthropic: HTTP error (status %d): %s", resp.StatusCode, sanitizeBody(body, p.apiKey))
 	}
 
 	var apiResp anthropicResponse
@@ -212,7 +217,7 @@ func (p *AnthropicProvider) doRequest(ctx context.Context, reqBody anthropicRequ
 
 func (p *AnthropicProvider) withRetry(ctx context.Context, fn func(context.Context) error) error {
 	var lastErr error
-	for attempt := 0; attempt <= anthropicMaxRetries; attempt++ {
+	for attempt := 0; attempt < anthropicMaxRetries; attempt++ {
 		if attempt > 0 {
 			backoff := time.Duration(1<<uint(attempt-1)) * time.Second
 			select {

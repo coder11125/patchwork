@@ -18,6 +18,7 @@ const (
 )
 
 type OllamaProvider struct {
+	baseURL     string
 	model       string
 	temperature float64
 	httpClient  *http.Client
@@ -64,12 +65,20 @@ func NewOllama(cfg domain.LLMConfig) (*OllamaProvider, error) {
 	}
 
 	return &OllamaProvider{
+		baseURL:     cfg.BaseURL,
 		model:       model,
 		temperature: cfg.Temperature,
 		httpClient: &http.Client{
 			Timeout: timeout,
 		},
 	}, nil
+}
+
+func (p *OllamaProvider) apiURL() string {
+	if p.baseURL != "" {
+		return p.baseURL
+	}
+	return ollamaAPIURL
 }
 
 func (p *OllamaProvider) Name() string {
@@ -142,7 +151,7 @@ func (p *OllamaProvider) doRequest(ctx context.Context, reqBody ollamaRequest) (
 		return "", fmt.Errorf("ollama: failed to marshal request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, ollamaAPIURL, bytes.NewReader(jsonBody))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, p.apiURL(), bytes.NewReader(jsonBody))
 	if err != nil {
 		return "", fmt.Errorf("ollama: failed to create request: %w", err)
 	}
@@ -165,7 +174,7 @@ func (p *OllamaProvider) doRequest(ctx context.Context, reqBody ollamaRequest) (
 		if parseErr := json.Unmarshal(body, &errResp); parseErr == nil && errResp.Error != "" {
 			return "", fmt.Errorf("ollama: API error (status %d): %s", resp.StatusCode, errResp.Error)
 		}
-		return "", fmt.Errorf("ollama: HTTP error (status %d): %s", resp.StatusCode, string(body))
+		return "", fmt.Errorf("ollama: HTTP error (status %d): %s", resp.StatusCode, sanitizeBody(body, ""))
 	}
 
 	var apiResp ollamaResponse
@@ -178,7 +187,7 @@ func (p *OllamaProvider) doRequest(ctx context.Context, reqBody ollamaRequest) (
 
 func (p *OllamaProvider) withRetry(ctx context.Context, fn func(context.Context) error) error {
 	var lastErr error
-	for attempt := 0; attempt <= ollamaMaxRetries; attempt++ {
+	for attempt := 0; attempt < ollamaMaxRetries; attempt++ {
 		if attempt > 0 {
 			backoff := time.Duration(1<<uint(attempt-1)) * time.Second
 			select {
