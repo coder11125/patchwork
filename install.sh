@@ -37,7 +37,7 @@ latest_release() {
 
 download_binary() {
   local version="$1" os="$2" arch="$3"
-  local filename="${BINARY}-${version#v}-${os}-${arch}"
+  local filename="${BINARY}-${os}-${arch}"
   local download_url="${GITHUB_URL}/releases/download/${version}/${filename}"
   local tmpfile
   tmpfile=$(mktemp)
