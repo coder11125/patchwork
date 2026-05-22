@@ -1,6 +1,7 @@
 package analyzer
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 
@@ -8,10 +9,28 @@ import (
 	"github.com/coder11125/patchwork/pkg/domain"
 )
 
-type SemverAnalyzer struct{}
+type SemverAnalyzer struct {
+	ecosystem domain.Ecosystem
+}
 
 func NewSemverAnalyzer() *SemverAnalyzer {
 	return &SemverAnalyzer{}
+}
+
+func NewSemverAnalyzerForEcosystem(eco domain.Ecosystem) *SemverAnalyzer {
+	return &SemverAnalyzer{ecosystem: eco}
+}
+
+func (a *SemverAnalyzer) Ecosystem() domain.Ecosystem {
+	return a.ecosystem
+}
+
+func (a *SemverAnalyzer) Analyze(ctx context.Context, pkg domain.PackageInfo, currentVersion, latestVersion string) (*domain.ChangelogEntry, error) {
+	changes, _, _ := a.AnalyzeVersion(currentVersion, latestVersion, pkg.Name)
+	return &domain.ChangelogEntry{
+		Version:         latestVersion,
+		BreakingChanges: changes,
+	}, nil
 }
 
 func (a *SemverAnalyzer) AnalyzeVersion(currentVersion, latestVersion, packageName string) ([]domain.BreakingChange, domain.RiskLevel, bool) {

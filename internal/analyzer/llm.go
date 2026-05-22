@@ -4,7 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
+	"net/http"
+	"strings"
+	"time"
 
 	"github.com/coder11125/patchwork/internal/llm"
 	"github.com/coder11125/patchwork/pkg/domain"
@@ -40,13 +44,114 @@ Changelog content:
 type LLMAnalyzer struct {
 	provider       llm.LLMProvider
 	semverAnalyzer *SemverAnalyzer
+	ecosystem      domain.Ecosystem
+	httpClient     *http.Client
 }
 
 func NewLLMAnalyzer(provider llm.LLMProvider) *LLMAnalyzer {
 	return &LLMAnalyzer{
 		provider:       provider,
 		semverAnalyzer: NewSemverAnalyzer(),
+		httpClient:     &http.Client{Timeout: 30 * time.Second},
 	}
+}
+
+func NewLLMAnalyzerForEcosystem(provider llm.LLMProvider, eco domain.Ecosystem) *LLMAnalyzer {
+	return &LLMAnalyzer{
+		provider:       provider,
+		semverAnalyzer: NewSemverAnalyzer(),
+		ecosystem:      eco,
+		httpClient:     &http.Client{Timeout: 30 * time.Second},
+	}
+}
+
+func (a *LLMAnalyzer) Ecosystem() domain.Ecosystem {
+	return a.ecosystem
+}
+
+func (a *LLMAnalyzer) Analyze(ctx context.Context, pkg domain.PackageInfo, currentVersion, latestVersion string) (*domain.ChangelogEntry, error) {
+	semChanges, _, _ := a.semverAnalyzer.AnalyzeVersion(currentVersion, latestVersion, pkg.Name)
+
+	entry := &domain.ChangelogEntry{
+		Version:         latestVersion,
+		BreakingChanges: semChanges,
+	}
+
+	if a.provider == nil {
+		return entry, nil
+	}
+
+	releaseBody, releaseDate := a.fetchGitHubRelease(ctx, pkg.Name, latestVersion)
+	if releaseBody != "" {
+		entry.RawContent = releaseBody
+		entry.ReleaseDate = releaseDate
+
+		llmChanges, _, _ := a.AnalyzeWithFallback(ctx, pkg.Name, currentVersion, latestVersion, releaseBody)
+		if len(llmChanges) > 0 {
+			entry.BreakingChanges = llmChanges
+		}
+	}
+
+	return entry, nil
+}
+
+func (a *LLMAnalyzer) fetchGitHubRelease(ctx context.Context, packageName, version string) (body string, date string) {
+	repo := inferRepoFromPackage(packageName)
+	if repo == "" {
+		return "", ""
+	}
+
+	u := fmt.Sprintf("https://api.github.com/repos/%s/releases?per_page=10", repo)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+	if err != nil {
+		return "", ""
+	}
+	req.Header.Set("Accept", "application/vnd.github.v3+json")
+	req.Header.Set("User-Agent", "patchwork-analyzer")
+
+	resp, err := a.httpClient.Do(req)
+	if err != nil {
+		return "", ""
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", ""
+	}
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", ""
+	}
+
+	var releases []struct {
+		TagName     string `json:"tag_name"`
+		Body        string `json:"body"`
+		PublishedAt string `json:"published_at"`
+	}
+	if err := json.Unmarshal(bodyBytes, &releases); err != nil {
+		return "", ""
+	}
+
+	cleanVersion := strings.TrimPrefix(version, "v")
+	for _, rel := range releases {
+		tagClean := strings.TrimPrefix(rel.TagName, "v")
+		if tagClean == cleanVersion || rel.TagName == version {
+			if t, err := time.Parse(time.RFC3339, rel.PublishedAt); err == nil {
+				return rel.Body, t.Format("2006-01-02")
+			}
+			return rel.Body, ""
+		}
+	}
+
+	if len(releases) > 0 {
+		if t, err := time.Parse(time.RFC3339, releases[0].PublishedAt); err == nil {
+			return releases[0].Body, t.Format("2006-01-02")
+		}
+		return releases[0].Body, ""
+	}
+
+	return "", ""
 }
 
 func (a *LLMAnalyzer) AnalyzeChangelog(ctx context.Context, packageName, currentVersion, latestVersion, changelogContent string) ([]domain.BreakingChange, error) {

@@ -53,6 +53,7 @@ func runRun(cmd *cobra.Command, args []string) error {
 	detReg.Register(&detector.MavenDetector{})
 
 	anReg := analyzer.NewRegistry()
+	populateAnalyzerRegistry(anReg)
 
 	recipeStore, err := recipe.NewDiskStore(appConfig.RecipeDir, appConfig.EpisodeDir, logger)
 	if err != nil {

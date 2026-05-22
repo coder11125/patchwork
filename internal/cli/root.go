@@ -111,6 +111,7 @@ func initRegistries() error {
 	detectorRegistry.Register(&detector.MavenDetector{})
 
 	analyzerRegistry = analyzer.NewRegistry()
+	populateAnalyzerRegistry(analyzerRegistry)
 
 	var err error
 	recipeStoreInstance, err = recipe.NewDiskStore(appConfig.RecipeDir, appConfig.EpisodeDir, logger)
@@ -135,17 +136,6 @@ func initRegistries() error {
 	testRunnerRegistry.Register(testrunner.NewBundlerTestRunner())
 	testRunnerRegistry.Register(testrunner.NewMavenTestRunner())
 
-	if appConfig.LLMProvider != "" && appConfig.LLMAPIKey != "" {
-		if _, err := llm.NewProvider(domain.LLMConfig{
-			Provider: domain.LLMProviderType(appConfig.LLMProvider),
-			Model:    appConfig.LLMModel,
-			APIKey:   appConfig.LLMAPIKey,
-			BaseURL:  appConfig.LLMBaseURL,
-		}); err != nil {
-			logger.Warn("failed to create LLM provider", "error", err)
-		}
-	}
-
 	if appConfig.GitConfig().Platform != "" && appConfig.GitConfig().Token != "" {
 		prCreatorInstance, err = pr.NewCreator(appConfig.GitConfig())
 		if err != nil {
@@ -154,4 +144,34 @@ func initRegistries() error {
 	}
 
 	return nil
+}
+
+func populateAnalyzerRegistry(reg *analyzer.Registry) {
+	reg.Register(analyzer.NewGitHubAnalyzer(appConfig.GitToken))
+
+	if appConfig.LLMProvider == "" || appConfig.LLMAPIKey == "" {
+		return
+	}
+
+	provider, err := llm.NewProvider(domain.LLMConfig{
+		Provider: domain.LLMProviderType(appConfig.LLMProvider),
+		Model:    appConfig.LLMModel,
+		APIKey:   appConfig.LLMAPIKey,
+		BaseURL:  appConfig.LLMBaseURL,
+	})
+	if err != nil {
+		logger.Warn("failed to create LLM provider, falling back to semver-only analysis", "error", err)
+		return
+	}
+
+	for _, eco := range []domain.Ecosystem{
+		domain.EcosystemGo,
+		domain.EcosystemNPM,
+		domain.EcosystemPip,
+		domain.EcosystemCargo,
+		domain.EcosystemRuby,
+		domain.EcosystemMaven,
+	} {
+		reg.Register(analyzer.NewLLMAnalyzerForEcosystem(provider, eco))
+	}
 }
