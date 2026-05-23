@@ -1,0 +1,2 @@
+# Exclude the landing page from GitHub language stats
+Webpage/** linguist-vendored

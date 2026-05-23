@@ -1,0 +1,55 @@
+---
+const features = [
+  {
+    title: "Multi-Ecosystem Detection",
+    description: "Scan for outdated packages across Go modules, npm, pip, Cargo, Ruby (Gemfile), and Maven (pom.xml).",
+    icon: "🔍",
+  },
+  {
+    title: "Breaking Change Analysis",
+    description: "Parse GitHub releases, changelogs, semver risk, or use LLM-powered analysis (Anthropic, Mistral, Groq, Ollama).",
+    icon: "⚡",
+  },
+  {
+    title: "Recipe-Driven Learning",
+    description: "Successful upgrades become reusable recipes. Future upgrades match against historical knowledge before falling back to LLM.",
+    icon: "📖",
+  },
+  {
+    title: "Safe Codemod Application",
+    description: "Regex-based transformations for manifests — go.mod, package.json, requirements.txt, Cargo.toml, Gemfile, pom.xml.",
+    icon: "🛠️",
+  },
+  {
+    title: "Isolated Test Execution",
+    description: "Tests run in temp directories before changes touch your working tree. Supports Go, npm, Cargo, Bundler, and Maven.",
+    icon: "🧪",
+  },
+  {
+    title: "PR Automation",
+    description: "Creates GitHub or GitLab pull requests for each upgrade — fully automated from detection to PR.",
+    icon: "🚀",
+  },
+];
+---
+
+<section id="features" class="border-t border-[var(--border)] px-6 py-24 sm:py-32">
+  <div class="mx-auto max-w-7xl">
+    <h2 class="text-center text-3xl font-bold text-[var(--text-heading)] sm:text-4xl">
+      Everything you need for<br />dependency upgrades
+    </h2>
+    <p class="mx-auto mt-4 max-w-xl text-center text-[var(--text-secondary)]">
+      A complete pipeline from detection to pull request, designed for safety and repeatability.
+    </p>
+
+    <div class="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {features.map((f) => (
+        <div class="group rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-card transition hover:border-primary-500/50 hover:bg-[var(--bg-card-hover)]">
+          <div class="mb-4 text-2xl">{f.icon}</div>
+          <h3 class="text-lg font-semibold text-[var(--text-heading)]">{f.title}</h3>
+          <p class="mt-2 text-sm leading-6 text-[var(--text-secondary)]">{f.description}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

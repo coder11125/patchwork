@@ -1,0 +1,90 @@
+---
+---
+
+<section id="architecture" class="border-t border-[var(--border)] px-6 py-24 sm:py-32">
+  <div class="mx-auto max-w-5xl">
+    <h2 class="text-center text-3xl font-bold text-[var(--text-heading)] sm:text-4xl">Architecture</h2>
+    <p class="mx-auto mt-4 max-w-xl text-center text-[var(--text-secondary)]">
+      Modular pipeline architecture with pluggable registries for each stage.
+    </p>
+
+    <div class="mt-16 overflow-x-auto">
+      <div class="min-w-[600px]">
+        <div class="mb-4 grid grid-cols-5 gap-3">
+          <div class="rounded-lg border px-3 py-4 text-center" style="border-color:var(--pipeline-detect-border);background:var(--pipeline-detect-bg)">
+            <div class="text-xs font-semibold uppercase tracking-wider" style="color:var(--pipeline-detect-text)">Detect</div>
+            <div class="mt-1 text-[10px] text-[var(--text-muted)]">go.mod, pkg.json, req.txt, Cargo, Gemfile, pom.xml</div>
+          </div>
+          <div class="rounded-lg border px-3 py-4 text-center" style="border-color:var(--pipeline-analyze-border);background:var(--pipeline-analyze-bg)">
+            <div class="text-xs font-semibold uppercase tracking-wider" style="color:var(--pipeline-analyze-text)">Analyze</div>
+            <div class="mt-1 text-[10px] text-[var(--text-muted)]">GitHub releases, changelogs, semver, LLM</div>
+          </div>
+          <div class="rounded-lg border px-3 py-4 text-center" style="border-color:var(--pipeline-plan-border);background:var(--pipeline-plan-bg)">
+            <div class="text-xs font-semibold uppercase tracking-wider" style="color:var(--pipeline-plan-text)">Plan</div>
+            <div class="mt-1 text-[10px] text-[var(--text-muted)]">Recipe matching, risk ordering</div>
+          </div>
+          <div class="rounded-lg border px-3 py-4 text-center" style="border-color:var(--pipeline-apply-border);background:var(--pipeline-apply-bg)">
+            <div class="text-xs font-semibold uppercase tracking-wider" style="color:var(--pipeline-apply-text)">Apply</div>
+            <div class="mt-1 text-[10px] text-[var(--text-muted)]">Codemods, manifest updates</div>
+          </div>
+          <div class="rounded-lg border px-3 py-4 text-center" style="border-color:var(--pipeline-pr-border);background:var(--pipeline-pr-bg)">
+            <div class="text-xs font-semibold uppercase tracking-wider" style="color:var(--pipeline-pr-text)">PR</div>
+            <div class="mt-1 text-[10px] text-[var(--text-muted)]">GitHub / GitLab API</div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-center gap-2 text-xs text-[var(--text-muted)]">
+          <span class="rounded bg-[var(--bg-secondary)] px-2 py-1">Recipe Store</span>
+          <span class="text-[var(--border)]">↕</span>
+          <span class="rounded bg-[var(--bg-secondary)] px-2 py-1">Episode Log</span>
+          <span class="text-[var(--border)]">↕</span>
+          <span class="rounded bg-[var(--bg-secondary)] px-2 py-1">OS Keychain</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="rounded-lg border border-[var(--border)] bg-[var(--bg-card)] p-4 shadow-card">
+        <h4 class="text-sm font-semibold text-[var(--text-heading)]">Detector Registry</h4>
+        <ul class="mt-2 space-y-1 text-xs text-[var(--text-secondary)]">
+          <li>Go modules</li>
+          <li>npm / package.json</li>
+          <li>pip / requirements.txt</li>
+          <li>Cargo.toml</li>
+          <li>Gemfile (Bundler)</li>
+          <li>pom.xml (Maven)</li>
+        </ul>
+      </div>
+      <div class="rounded-lg border border-[var(--border)] bg-[var(--bg-card)] p-4 shadow-card">
+        <h4 class="text-sm font-semibold text-[var(--text-heading)]">Codemod Registry</h4>
+        <ul class="mt-2 space-y-1 text-xs text-[var(--text-secondary)]">
+          <li>Regex transformations</li>
+          <li>go.mod updates</li>
+          <li>package.json updates</li>
+          <li>requirements.txt updates</li>
+          <li>Cargo.toml updates</li>
+          <li>Gemfile / pom.xml updates</li>
+        </ul>
+      </div>
+      <div class="rounded-lg border border-[var(--border)] bg-[var(--bg-card)] p-4 shadow-card">
+        <h4 class="text-sm font-semibold text-[var(--text-heading)]">Test Runner Registry</h4>
+        <ul class="mt-2 space-y-1 text-xs text-[var(--text-secondary)]">
+          <li>go test</li>
+          <li>npm test</li>
+          <li>cargo test</li>
+          <li>bundle exec rspec</li>
+          <li>mvn test</li>
+        </ul>
+      </div>
+      <div class="rounded-lg border border-[var(--border)] bg-[var(--bg-card)] p-4 shadow-card">
+        <h4 class="text-sm font-semibold text-[var(--text-heading)]">LLM Providers</h4>
+        <ul class="mt-2 space-y-1 text-xs text-[var(--text-secondary)]">
+          <li>Anthropic Claude</li>
+          <li>Mistral</li>
+          <li>Groq</li>
+          <li>Ollama (local)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>

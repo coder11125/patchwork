@@ -7,6 +7,10 @@ bin/
 *.dylib
 *.test
 *.out
+Webpage/node_modules
+Webpage/dist/
+Webpage/.vercel
+Webpage/.astro/
 
 # Coverage
 coverage.out
